@@ -40,6 +40,7 @@ Use these scopes to indicate what part of the image is affected:
 ## Examples
 
 ### Adding Packages
+
 ```
 feat(packages): add development tools and editors
 
@@ -48,6 +49,7 @@ feat(packages): add development tools and editors
 ```
 
 ### Changing Base Image
+
 ```
 build(base): switch from Bazzite to Bluefin
 
@@ -55,6 +57,7 @@ Changing to Bluefin for better developer tooling support
 ```
 
 ### Configuring Services
+
 ```
 feat(services): enable SSH and container services
 
@@ -63,6 +66,7 @@ feat(services): enable SSH and container services
 ```
 
 ### ISO Configuration
+
 ```
 config(disk): update ISO to use custom registry
 
@@ -70,6 +74,7 @@ Update bootc switch URL to point to ghcr.io/username/repo
 ```
 
 ### Workflow Changes
+
 ```
 ci(workflow): enable automatic ISO builds
 
@@ -77,6 +82,7 @@ Configure build-disk.yml to trigger on main branch pushes
 ```
 
 ### Metadata Updates
+
 ```
 chore(metadata): update image description and keywords
 
@@ -84,11 +90,13 @@ Update ArtifactHub metadata with project-specific information
 ```
 
 ### Documentation
+
 ```
 docs: add installation instructions for new features
 ```
 
 ### Bug Fixes
+
 ```
 fix(packages): disable COPR after package installation
 
@@ -111,6 +119,6 @@ BREAKING CHANGE: This upgrade requires a clean reinstall for existing users.
 - Use imperative mood ("add" not "added" or "adds")
 - Don't end subject line with a period
 - Separate subject from body with a blank line
-- Use body to explain *what* and *why*, not *how*
+- Use body to explain _what_ and _why_, not _how_
 - Be short and concise, avoid long commit messages, keep it simple
 - Reference issues/PRs in footer when applicable

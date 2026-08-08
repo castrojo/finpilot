@@ -3,7 +3,8 @@
 ### custom-apps.just
 ####################
 ## Example application installation commands
-## These are simplified examples adapted from Bluefin
+## See .agents/skills/finpilot-custom/SKILL.md for runtime layer guidance
+## See .agents/skills/finpilot-examples/SKILL.md for activation patterns
 
 # Install default applications via Homebrew
 [group('Apps')]

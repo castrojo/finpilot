@@ -1,32 +1,92 @@
 # finpilot
 
-A template for building custom bootc operating system images based on the lessons from [Universal Blue](https://universal-blue.org/) and [Bluefin](https://projectbluefin.io). It is designed to be used manually, but is optimized to be bootstraped by GitHub Copilot. After set up you'll have your own custom Linux. 
+A template for building custom bootc operating system images based on the lessons from [Universal Blue](https://universal-blue.org/) and [Bluefin](https://projectbluefin.io). It is designed to be used manually, but is optimized to be bootstraped by GitHub Copilot. After set up you'll have your own custom Linux.
 
-This template uses the **multi-stage build architecture** from , combining resources from multiple OCI containers for modularity and maintainability. See the [Architecture](#architecture) section below for details.
+This template uses the **multi-stage build architecture** from @projectbluefin/distroless, combining resources from multiple OCI containers for modularity and maintainability. See the [Architecture](#architecture) section below for details.
 
-**Unlike previous templates, you are not modifying Bluefin and making changes.**: You are assembling your own Bluefin in the same exact way that Bluefin, Aurora, and Bluefin LTS are built. This is way more flexible and better for everyone since the image-agnostic and desktop things we love about Bluefin lives in @projectbluefin/common. 
+**Unlike previous templates, you are not modifying Bluefin and making changes.**: You are assembling your own Bluefin in the same exact way that Bluefin, Aurora, and Bluefin LTS are built. This is way more flexible and better for everyone since the image-agnostic and desktop things we love about Bluefin lives in @projectbluefin/common.
 
- Instead, you create your own OS repository based on this template, allowing full customization while leveraging Bluefin's robust build system and shared components.
+Instead, you create your own OS repository based on this template, allowing full customization while leveraging Bluefin's robust build system and shared components.
 
 > Be the one who moves, not the one who is moved.
 
+## What Makes this Raptor Different?
+
+Here are the changes from [Base Image Name]. This image is based on [Bluefin/Bazzite/Aurora/etc] and includes these customizations:
+
+### Added Packages (Build-time)
+
+- **System packages**: `tmux` and `gum` — tmux is the template's package-manager cache smoke test, and gum provides the interactive prompts used by the default ujust recipes.
+
+### Added Applications (Runtime)
+
+- **CLI Tools (Homebrew)**: neovim, helix - [brief explanation]
+- **GUI Apps (Flatpak)**: Spotify, Thunderbird - [brief explanation]
+
+### Removed/Disabled
+
+- List anything removed from base image
+
+### Configuration Changes
+
+- Any systemd services enabled/disabled
+- Desktop environment changes
+- Other notable modifications
+
+_Last updated: [date]_
+
+> Replace the placeholders above with your actual customizations whenever you add or remove packages, apps, or configuration. This section is what tells users how your image differs from the base.
+
 ## Guided Copilot Mode
 
-Here are the steps to guide copilot to make your own repo, or just use it like a regular image template.
+This template works best with **phased prompts** that let Copilot bootstrap your image in three stages.
 
-1. Click the green "Use this as a template" button and create a new repository
-2. Select your owner, pick a repo name for your OS, and a description
-3. In the "Jumpstart your project with Copilot (optional)" add this, modify to your liking:
+### Phase 1 — Bootstrap
+
+Use this prompt first to get your fork building:
 
 ```
-Use @projectbluefin/finpilot as a template, name the OS the repository name. Ensure the entire operating system is bootstrapped. Ensure all github actions are enabled and running.  Ensure the README has the github setup instructions for cosign and the other steps required to finish the task.
+Bootstrap a new custom OS from @projectbluefin/finpilot. Name it after this repository. Use the `finpilot-onboarding` skill first, then:
+1. Rename `finpilot` in the 7 required files
+2. Enable GitHub Actions and set RENOVATE_TOKEN (repo + workflow scopes)
+3. Configure branch protection for `main` with `validate` as a required status check
+4. Enable auto-merge
+5. Trigger the first green build on `main`
+6. Add the "What Makes this Raptor Different" section to README.md (with placeholders)
+```
+
+### Phase 2 — Customize
+
+Once the first build is green, use this prompt to add packages:
+
+```
+Use the `finpilot-packages` and `finpilot-custom` skills, then:
+1. Add one system package to the image in `build/10-build.sh`
+2. Add one CLI tool to `custom/brew/default.Brewfile`
+3. Add one GUI app to `custom/flatpaks/default.preinstall`
+4. Add shortcuts in `custom/ujust/custom-apps.just` to install them
+5. Update the README "What Makes this Raptor Different" section with the new entries
+6. Run `just build && just build-qcow2 && just run-vm-qcow2` to verify locally
+7. Open a PR and merge once `validate` passes
+```
+
+### Phase 3 — Production
+
+When you are ready for production, use this prompt to harden the setup:
+
+```
+Use the `finpilot-maintain` and `finpilot-ci` skills, then:
+1. Enable keyless image signing by uncommenting the step in `.github/workflows/build-image.yml`
+2. Verify the cosign command works: cosign verify --certificate-identity-regexp="https://github.com/USER/REPO/.github/workflows/" --certificate-oidc-issuer="https://token.actions.githubusercontent.com" ghcr.io/USER/REPO:stable
+3. Follow the maintenance schedule in the `finpilot-maintain` skill
 ```
 
 ## What's Included
 
 ### Build System
+
 - Automated builds via GitHub Actions on every commit
-- Awesome self hosted Renovate setup that keeps all your images and actions up to date.
+- Self-hosted Renovate for automated dependency updates
 - Automatic cleanup of old images (90+ days) to keep it tidy
 - Pull request workflow - test changes before merging to main
   - PRs build and validate before merge
@@ -34,26 +94,30 @@ Use @projectbluefin/finpilot as a template, name the OS the repository name. Ens
 - Validates your files on pull requests so you never break a build:
   - Brewfile, Justfile, ShellCheck, Renovate config, and it'll even check to make sure the flatpak you add exists on FlatHub
 - Production Grade Features
-  - Container signing and SBOM Generation
+  - Container signing with keyless OIDC
   - See checklist below to enable these as they take some manual configuration
 
 ### Homebrew Integration
+
 - Pre-configured Brewfiles for easy package installation and customization
 - Includes curated collections: development tools, fonts, CLI utilities. Go nuts.
 - Users install packages at runtime with `brew bundle`, aliased to premade `ujust commands`
 - See [custom/brew/README.md](custom/brew/README.md) for details
 
 ### Flatpak Support
+
 - Ship your favorite flatpaks
 - Automatically installed on first boot after user setup
 - See [custom/flatpaks/README.md](custom/flatpaks/README.md) for details
 
 ### ujust Commands
+
 - User-friendly command shortcuts via `ujust`
 - Pre-configured examples for app installation and system maintenance for you to customize
 - See [custom/ujust/README.md](custom/ujust/README.md) for details
 
 ### Build Scripts
+
 - Modular numbered scripts (10-, 20-, 30-) run in order
 - Example scripts included for third-party repositories and desktop replacement
 - Helper functions for safe COPR usage
@@ -67,56 +131,88 @@ Click "Use this template" to create a new repository from this template.
 
 ### 2. Rename the Project
 
-Important: Change `finpilot` to your repository name in these 6 files:
+Important: Change `finpilot` to your repository name in these 7 files:
 
-1. `Containerfile` (line 4): `# Name: your-repo-name`
-2. `Justfile` (line 1): `export image_name := env("IMAGE_NAME", "your-repo-name")`
-3. `README.md` (line 1): `# your-repo-name`
-4. `artifacthub-repo.yml` (line 5): `repositoryID: your-repo-name`
-5. `custom/ujust/README.md` (~line 175): `localhost/your-repo-name:stable`
-6. `.github/workflows/clean.yml` (line 23): `packages: your-repo-name`
+1. `Containerfile` (`# Name:` comment and `ARG IMAGE_NAME`): `# Name: your-repo-name`
+2. `Justfile` (`export IMAGE_NAME := env("IMAGE_NAME", ...)`): `your-repo-name`
+3. `README.md` (title): `# your-repo-name`
+4. `artifacthub-repo.yml` (`repositoryID`): `repositoryID: your-repo-name`
+5. `custom/ujust/README.md` (bootc switch example): `localhost/your-repo-name:stable`
+6. `.github/workflows/clean.yml` (`packages`): `packages: your-repo-name`
+7. `iso/iso.toml` (bootc switch URL): `ghcr.io/YOUR_USERNAME/your-repo-name:stable`
 
 ### 3. Enable GitHub Actions
 
 - Go to the "Actions" tab in your repository
 - Click "I understand my workflows, go ahead and enable them"
 
-Your first build will start automatically! 
+Your first build will start automatically!
 
 Note: Image signing is disabled by default. Your images will build successfully without any signing keys. Once you're ready for production, see "Optional: Enable Image Signing" below.
 
-### 4. Customize Your Image
+### 4. Enable Renovate (Required)
 
-Choose your base image in `Containerfile` (line 23):
+Renovate automatically updates dependencies and GitHub Actions (including workflow files). This template uses a self-hosted Renovate runner via `projectbluefin/actions`.
+
+**One-time setup:**
+
+1. Go to GitHub → Settings → Developer settings → **Personal access tokens** → **Tokens (classic)**
+2. Click **Generate new token (classic)**
+3. Set a note like `renovate-finpilot`
+4. Select scopes: **`repo`** (full control) and **`workflow`** (update workflows)
+5. Click **Generate token** and copy the value
+6. Go to your repository → Settings → Secrets and variables → Actions
+7. Add a new secret: **`RENOVATE_TOKEN`** (paste the token value)
+8. Enable **Settings → General → Pull Requests → Allow auto-merge** so Renovate can merge low-risk updates after checks pass
+9. **Configure branch protection for `main`** (required for automerge to work):
+   - Go to Settings → Branches → Add rule
+   - Set **Branch name pattern** to `main`
+   - Enable **"Require a pull request before merging"**
+   - Enable **"Require status checks to pass before merging"**
+   - Add `validate` as a required status check
+   - Enable **"Require branches to be up to date before merging"** (recommended)
+
+Renovate will run every 6 hours and on config changes. It pins GitHub Actions to SHAs and updates tracked image digests automatically.
+
+### 5. Customize Your Image
+
+Choose your base image in `Containerfile` (the `FROM` line):
+
 ```dockerfile
-FROM ghcr.io/ublue-os/bluefin:stable
+FROM quay.io/fedora-ostree-desktops/silverblue:44@sha256:...
 ```
 
+Finpilot layers on top of Fedora Silverblue, not Bluefin. Bluefin's desktop
+configuration is provided by `@projectbluefin/common` earlier in the build.
+
 Add your packages in `build/10-build.sh`:
+
 ```bash
 dnf5 install -y package-name
 ```
 
 Customize your apps:
+
 - Add Brewfiles in `custom/brew/` ([guide](custom/brew/README.md))
 - Add Flatpaks in `custom/flatpaks/` ([guide](custom/flatpaks/README.md))
 - Add ujust commands in `custom/ujust/` ([guide](custom/ujust/README.md))
 
-### 5. Development Workflow
+### 6. Development Workflow
 
 All changes should be made via pull requests:
 
 1. Open a pull request on GitHub with the change you want.
-3. The PR will automatically trigger:
+2. The PR will automatically trigger:
    - Build validation
    - Brewfile, Flatpak, Justfile, and shellcheck validation
    - Test image build
-4. Once checks pass, merge the PR
-5. Merging triggers publishes a `:stable` image
+3. Once checks pass, merge the PR
+4. Merging triggers publishes a `:stable` image
 
-### 6. Deploy Your Image
+### 7. Deploy Your Image
 
 Switch to your image:
+
 ```bash
 sudo bootc switch ghcr.io/your-username/your-repo-name:stable
 sudo systemctl reboot
@@ -135,38 +231,23 @@ Image signing is disabled by default to let you start building immediately. Howe
 
 ### Setup Instructions
 
-1. Generate signing keys:
+This template uses **keyless OIDC signing** via Cosign and GitHub Actions. No manual key generation, `cosign.key`, or `cosign.pub` files are required.
+
+1. Edit `.github/workflows/build-image.yml`
+2. Find the "OPTIONAL: Sign and attest" section
+3. Uncomment the `Sign and publish` step (remove the `#` from the beginning of each line in that section)
+4. Commit and push
+
+Your next build will produce a signed image. The signature is created using GitHub's OIDC token via Fulcio.
+
+Users can verify your images with:
+
 ```bash
-cosign generate-key-pair
+cosign verify \
+  --certificate-identity-regexp="https://github.com/your-username/your-repo-name/.github/workflows/" \
+  --certificate-oidc-issuer="https://token.actions.githubusercontent.com" \
+  ghcr.io/your-username/your-repo-name:stable
 ```
-
-This creates two files:
-- `cosign.key` (private key) - Keep this secret
-- `cosign.pub` (public key) - Commit this to your repository
-
-2. Add the private key to GitHub Secrets:
-   - Copy the entire contents of `cosign.key`
-   - Go to your repository on GitHub
-   - Navigate to Settings → Secrets and variables → Actions ([GitHub docs](https://docs.github.com/en/actions/security-guides/encrypted-secrets#creating-encrypted-secrets-for-a-repository))
-   - Click "New repository secret"
-   - Name: `SIGNING_SECRET`
-   - Value: Paste the entire contents of `cosign.key`
-   - Click "Add secret"
-
-3. Replace the contents of `cosign.pub` with your public key:
-   - Open `cosign.pub` in your repository
-   - Replace the placeholder with your actual public key
-   - Commit and push the change
-
-4. Enable signing in the workflow:
-   - Edit `.github/workflows/build.yml`
-   - Find the "OPTIONAL: Image Signing with Cosign" section.
-   - Uncomment the steps to install Cosign and sign the image (remove the `#` from the beginning of each line in that section).
-   - Commit and push the change
-
-5. Your next build will produce signed images!
-
-Important: Never commit `cosign.key` to the repository. It's already in `.gitignore`.
 
 ## Love Your Image? Let's Go to Production
 
@@ -177,94 +258,49 @@ Ready to take your custom OS to production? Enable these features for enhanced s
 - [ ] **Enable Image Signing** (Recommended)
   - Provides cryptographic verification of your images
   - Prevents tampering and ensures authenticity
+  - Uses keyless OIDC signing via GitHub Actions — no keys or secrets required
   - See "Optional: Enable Image Signing" section above for setup instructions
   - Status: **Disabled by default** to allow immediate testing
 
-- [ ] **Enable SBOM Attestation** (Recommended)
-  - Generates Software Bill of Materials for supply chain security
-  - Provides transparency about what's in your image
-  - Requires image signing to be enabled first
-  - To enable:
-    1. First complete image signing setup above
-    2. Edit `.github/workflows/build.yml`
-    3. Find the "OPTIONAL: SBOM Attestation" section around line 232
-    4. Uncomment the "Add SBOM Attestation" step
-    5. Commit and push
-  - Status: **Disabled by default** (requires signing first)
-
 - [ ] **Enable Image Rechunking** (Recommended)
   - Optimizes bootc image layers for better update performance
-  - Reduces update sizes by 5-10x
   - Improves download resumability with evenly sized layers
-  - To enable:
-    1. Edit `.github/workflows/build.yml`
-    2. Find the "Build Image" step
-    3. Add a rechunk step after the build (see example below)
+  - Set `ENABLE_RECHUNKING: "true"` in `.github/workflows/build-image.yml`
+  - Uses OCI-native chunkah; `/usr/libexec/bootc-base-imagectl` is not required
   - Status: **Not enabled by default** (optional optimization)
 
 #### Adding Image Rechunking
 
-After building your bootc image, add a rechunk step before pushing to the registry. Here's an example based on the workflow used by [zirconium-dev/zirconium](https://github.com/zirconium-dev/zirconium):
+The old rechunking recipe used `/usr/libexec/bootc-base-imagectl`, which is absent from many Universal Blue images. Do not copy that recipe or install a legacy rechunker: its layer format is not a safe migration path to the current implementation.
+
+Finpilot instead uses the OCI-native [`bootc-build/chunka`](https://github.com/projectbluefin/actions/tree/main/bootc-build/chunka) action. The action runs chunkah from a pinned container and replaces the locally built image before the existing tag and push steps. The default Fedora Silverblue-based finpilot image is RPM-based, so chunkah can discover components from its RPM database without `bootc-base-imagectl`.
+
+To enable it, change the workflow environment value:
 
 ```yaml
-- name: Build image
-  id: build
-  run: sudo podman build -t "${IMAGE_NAME}:${DEFAULT_TAG}" -f ./Containerfile .
-
-- name: Rechunk Image
-  run: |
-    sudo podman run --rm --privileged \
-      -v /var/lib/containers:/var/lib/containers \
-      --entrypoint /usr/libexec/bootc-base-imagectl \
-      "localhost/${IMAGE_NAME}:${DEFAULT_TAG}" \
-      rechunk --max-layers 96 \
-      "localhost/${IMAGE_NAME}:${DEFAULT_TAG}" \
-      "localhost/${IMAGE_NAME}:${DEFAULT_TAG}"
-
-- name: Push to Registry
-  run: sudo podman push "localhost/${IMAGE_NAME}:${DEFAULT_TAG}" "${IMAGE_REGISTRY}/${IMAGE_NAME}:${DEFAULT_TAG}"
+env:
+  ENABLE_RECHUNKING: "true"
+  RECHUNK_MAX_LAYERS: "128"
 ```
 
-Alternative approach using a temporary tag for clarity:
+Rechunking runs only for publish builds, not pull requests. It requires additional runner time and temporary storage. Keep `ENABLE_RECHUNKING` set to `"false"` if those costs are more important than smaller OTA deltas.
 
-```yaml
-- name: Rechunk Image
-  run: |
-    sudo podman run --rm --privileged \
-      -v /var/lib/containers:/var/lib/containers \
-      --entrypoint /usr/libexec/bootc-base-imagectl \
-      "localhost/${IMAGE_NAME}:${DEFAULT_TAG}" \
-      rechunk --max-layers 67 \
-      "localhost/${IMAGE_NAME}:${DEFAULT_TAG}" \
-      "localhost/${IMAGE_NAME}:${DEFAULT_TAG}-rechunked"
-    
-    # Tag the rechunked image with the original tag
-    sudo podman tag "localhost/${IMAGE_NAME}:${DEFAULT_TAG}-rechunked" "localhost/${IMAGE_NAME}:${DEFAULT_TAG}"
-    sudo podman rmi "localhost/${IMAGE_NAME}:${DEFAULT_TAG}-rechunked"
-```
+**Custom base images:** This switch is supported for the template's default RPM-based image. BuildStream-produced images strip the component xattrs chunkah needs and require an `xattr-manifest`; changing to one of those images is not a one-line setup. See the action's `xattr-manifest` input before replacing the default base.
 
-**Parameters:**
-- `--max-layers`: Maximum number of layers for the rechunked image (typically 67 for optimal balance)
-- The first image reference is the source (input)
-- The second image reference is the destination (output)
-  - When using the same reference for both, the image is rechunked in-place
-  - You can also use different tags (e.g., `-rechunked` suffix) and then retag if preferred
+**Optional package cadence:** Basic rechunking does not require package cadence data. Advanced deployments can run [`bootc-build/apply-pkg-intervals`](https://github.com/projectbluefin/actions/tree/main/bootc-build/apply-pkg-intervals) before rechunking and maintain `files/pkg-intervals.tsv` with the reusable package-cadence workflow. That workflow requires a repository GitHub App ID and private key, so configure it separately rather than treating it as part of basic enablement.
 
 **References:**
-- [CoreOS rpm-ostree build-chunked-oci documentation](https://coreos.github.io/rpm-ostree/build-chunked-oci/)
+
+- [chunkah](https://github.com/coreos/chunkah)
+- [projectbluefin/actions rechunking](https://github.com/projectbluefin/actions/tree/main/bootc-build/chunka)
 - [bootc documentation](https://containers.github.io/bootc/)
 
 ### After Enabling Production Features
 
 Your workflow will:
-- Sign all images with your key
-- Generate and attach SBOMs
-- Provide full supply chain transparency
 
-Users can verify your images with:
-```bash
-cosign verify --key cosign.pub ghcr.io/your-username/your-repo-name:stable
-```
+- Sign all images using keyless OIDC signing
+- Provide cryptographic proof of authenticity via SLSA build provenance attestation
 
 ## Detailed Guides
 
@@ -280,15 +316,15 @@ This template follows the **multi-stage build architecture** from @projectbluefi
 ### Multi-Stage Build Pattern
 
 **Stage 1: Context (ctx)** - Combines resources from multiple sources:
+
 - Local build scripts (`/build`)
 - Local custom files (`/custom`)
-- **@projectbluefin/common** - Desktop configuration shared with Aurora
-- **@projectbluefin/branding** - Branding assets
-- **@ublue-os/artwork** - Artwork shared with Aurora and Bazzite
+- **@projectbluefin/common** - Desktop configuration shared with Aurora (includes branding/artwork content)
 - **@ublue-os/brew** - Homebrew integration
 
 **Stage 2: Base Image** - Default options:
-- `ghcr.io/ublue-os/silverblue-main:latest` (Fedora-based, default)
+
+- `quay.io/fedora-ostree-desktops/silverblue:44` (Fedora-based GNOME desktop, default)
 - `quay.io/centos-bootc/centos-bootc:stream10` (CentOS-based alternative)
 
 ### Benefits of This Architecture
@@ -303,16 +339,13 @@ This template follows the **multi-stage build architecture** from @projectbluefi
 The template imports files from these OCI containers at build time:
 
 ```dockerfile
-COPY --from=ghcr.io/ublue-os/base-main:latest /system_files /oci/base
 COPY --from=ghcr.io/projectbluefin/common:latest /system_files /oci/common
 COPY --from=ghcr.io/ublue-os/brew:latest /system_files /oci/brew
 ```
 
 Your build scripts can access these files at:
-- `/ctx/oci/base/` - Base system configuration
-- `/ctx/oci/common/` - Shared desktop configuration
-- `/ctx/oci/branding/` - Branding assets
-- `/ctx/oci/artwork/` - Artwork files
+
+- `/ctx/oci/common/` - Shared desktop configuration (branding/artwork content lives inside `common`)
 - `/ctx/oci/brew/` - Homebrew integration files
 
 **Note**: Renovate automatically updates `:latest` tags to SHA digests for reproducible builds.
@@ -341,9 +374,27 @@ just run-vm-qcow2       # Test in browser-based VM
 ## Security
 
 This template provides security features for production use:
-- Optional SBOM generation (Software Bill of Materials) for supply chain transparency
-- Optional image signing with cosign for cryptographic verification
+
+- Optional image signing with keyless OIDC cosign for cryptographic verification
 - Automated security updates via Renovate
 - Build provenance tracking
 
 These security features are disabled by default to allow immediate testing. When you're ready for production, see the "Love Your Image? Let's Go to Production" section above to enable them.
+
+## Troubleshooting
+
+### Flatpaks not preinstalled after bootc switch (fixes #49)
+
+Flatpaks are installed on first boot via `flatpak-preinstall.service`, not during `bootc switch`. Ensure:
+
+- Internet is available on first boot
+- `flatpak-preinstall.service` completes (`systemctl status flatpak-preinstall.service`)
+- Wait until the service finishes before checking for flatpaks
+
+### flatpak-preinstall errors about adw-gtk3 runtimes (fixes #30)
+
+The `adw-gtk3-dark` runtime is not available on Flathub. These warnings are cosmetic and do not prevent other flatpaks from installing. To suppress, remove `adw-gtk3-dark` from your flatpak list in `custom/flatpaks/`.
+
+### Homebrew not available after bootc switch (fixes #44)
+
+Homebrew is **pre-staged at build time** (tarball + systemd services). The `brew-setup.service` extracts it on **first boot**. If you don't see `brew`, verify `brew-setup.service` ran (`systemctl status brew-setup.service`) and that your Containerfile includes the Brew integration.

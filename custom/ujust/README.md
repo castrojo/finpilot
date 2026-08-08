@@ -9,8 +9,9 @@ This directory contains Just recipe files that will be installed into your custo
 ## How It Works
 
 1. **During Build**: All `.just` files in this directory are consolidated and copied to `/usr/share/ublue-os/just/60-custom.just` in the image
-2. **After Installation**: Users run `ujust` to see available commands
-3. **User Experience**: Simple command interface for system tasks
+2. **Automatic Import**: The base `ublue-os-just` package imports `60-custom.just`; Bluefin recipes from `projectbluefin/common` remain available in the build context but are not installed by default
+3. **After Installation**: Users run `ujust` to see available commands
+4. **User Experience**: Simple command interface for system tasks
 
 ## File Structure
 
@@ -92,7 +93,7 @@ install-something:
 ```
 
 ### User Prompts
-Use `gum` for interactive prompts (included in Universal Blue images):
+Use `gum` for interactive prompts. The template installs it at build time because the default ujust recipes depend on it:
 ```just
 interactive-command:
     #!/usr/bin/bash
@@ -172,7 +173,7 @@ Universal Blue images include helpers in `/usr/lib/ujust/ujust.sh`:
 Test locally before committing:
 
 1. Build your image: `just build` (see [`Justfile`](../../Justfile))
-2. If on a bootc system: `sudo bootc switch --target localhost/finpilot:stable`
+2. If on a bootc system: `sudo bootc switch --target localhost/your-repo-name:stable`
 3. Reboot and test: `ujust your-command`
 
 Or test the just files directly:
@@ -203,7 +204,7 @@ Use groups to categorize commands:
 install-app:
     echo "Installing app..."
 
-[group('System')]  
+[group('System')]
 configure-system:
     echo "Configuring system..."
 

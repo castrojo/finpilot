@@ -13,15 +13,17 @@ jobs:
     permissions:
       packages: write
     steps:
-      - name: Delete Images Older Than 90 Days
-        uses: dataaxiom/ghcr-cleanup-action@cd0cdb900b5dbf3a6f2cc869f0dbb0b8211f50c4 # v1.0.16
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - name: Cleanup old images
+        uses: projectbluefin/actions/bootc-build/ghcr-cleanup@5fe9b3bcfdf3a68b4d2eb459445505b600e456e6 # v1
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          # IMPORTANT: Update this to match your image name from Containerfile (line 9)
+          # IMPORTANT: Update this to match your image name from Containerfile (# Name: comment)
           # This should match the "# Name: your-repo-name" comment in your Containerfile
           # Example: If your Containerfile has "# Name: my-custom-os", use "my-custom-os" here
           packages: finpilot
           older-than: 90 days
-          delete-orphaned-images: true
           keep-n-tagged: 7
           keep-n-untagged: 7
+          github-token: ${{ secrets.GITHUB_TOKEN }}

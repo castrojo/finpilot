@@ -1,31 +1,57 @@
 name: Renovate
+
 on:
   schedule:
-    # Run every 6 hours
-    - cron: '0 */6 * * *'
+    - cron: "0 */6 * * *"
   workflow_dispatch:
   push:
     branches:
       - main
     paths:
-      - '.github/renovate.json5'
-      - '.github/workflows/renovate.yml'
+      - ".github/renovate.json"
+      - ".github/workflows/renovate.yml"
+
+permissions: {}
 
 jobs:
   renovate:
-    name: Run Renovate
+    name: Renovate
     runs-on: ubuntu-latest
     permissions:
-      contents: write
-      pull-requests: write
+      contents: read
     steps:
       - name: Checkout
-        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5
-
-      - name: Self-hosted Renovate
-        uses: renovatebot/github-action@b9486682a19fe4ea2dd1263c11b4e0c1fe1838fe # v40.3.2
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
-          configurationFile: .github/renovate.json5
-          token: ${{ secrets.GITHUB_TOKEN }}
+          persist-credentials: false
+
+      - name: Check for RENOVATE_TOKEN
+        id: token-check
+        shell: bash
         env:
-          LOG_LEVEL: 'debug'
+          TOKEN: ${{ secrets.RENOVATE_TOKEN }}
+        run: |
+          if [[ -z "${TOKEN}" ]]; then
+            echo "RENOVATE_TOKEN secret not configured — skipping Renovate."
+            echo "See .github/SETUP_CHECKLIST.md to set up the token."
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "configured=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Validate RENOVATE_TOKEN
+        if: steps.token-check.outputs.configured == 'true'
+        uses: ./.github/actions/check-token-health
+        with:
+          token: ${{ secrets.RENOVATE_TOKEN }}
+          token_name: RENOVATE_TOKEN
+          required_scopes: repo,workflow
+
+      - name: Run Renovate
+        if: steps.token-check.outputs.configured == 'true'
+        uses: renovatebot/github-action@316d7cd859606d6039a2182b7d69199e9b036835 # v46.2.1
+        with:
+          token: ${{ secrets.RENOVATE_TOKEN }}
+        env:
+          LOG_LEVEL: debug
+          RENOVATE_REPOSITORIES: '["${{ github.repository }}"]'

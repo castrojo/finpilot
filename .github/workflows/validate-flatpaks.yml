@@ -5,13 +5,13 @@ permissions:
 on:
   pull_request:
     paths:
-      - "custom/flatpak/**"
+      - "custom/flatpaks/**"
 jobs:
   validate:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v5
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
       - name: Set up Flathub
         shell: bash
@@ -22,16 +22,25 @@ jobs:
       - name: Validate Flatpaks
         shell: bash
         run: |
-          echo "Validating flatpak files in custom/flatpak/ directory..."
+          echo "Validating flatpak preinstall files in custom/flatpaks/ directory..."
 
           set -xeuo pipefail
 
-          find "custom/flatpak" -iname '*\.list*' -print0 | \
-            while IFS= read -r -d '' flatpaks_file ; do \
+          find "custom/flatpaks" -iname '*\.preinstall' -print0 | \
+            while IFS= read -r -d '' flatpaks_file ; do
               echo "::group:: ===$(basename "$flatpaks_file")==="
-              grep -v "#.*" "$flatpaks_file" | grep -v "^$" | \
-                while read -r flatpak ; do \
-                  flatpak remote-info --user flathub "${flatpak}"
-                done
+              while IFS= read -r app_id; do
+                branch=$(awk -v app="$app_id" '
+                  $0 == "[Flatpak Preinstall " app "]" {found=1; next}
+                  found && /^Branch=/ {print; valid=1; exit}
+                  found && /^\[/ {exit}
+                  END {if (!valid) print "MISSING"}
+                ' "$flatpaks_file")
+                if [ "$branch" = "MISSING" ]; then
+                  echo "✗ $app_id: missing Branch= key"
+                  exit 1
+                fi
+                flatpak remote-info --user flathub "${app_id}"
+              done < <(sed -n 's/^\[Flatpak Preinstall \(.*\)\]$/\1/p' "$flatpaks_file")
               echo "::endgroup::"
             done

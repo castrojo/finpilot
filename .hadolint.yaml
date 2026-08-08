@@ -1,0 +1,6 @@
+# Hadolint configuration for Containerfile
+# https://github.com/hadolint/hadolint
+ignored:
+  - DL3006 # Commented-out alternative FROM lines use ARG interpolation
+  - DL3059 # Multiple consecutive RUN instructions — intentional design
+  - SC2312 # Consider invoking this command separately — style preference

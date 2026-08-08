@@ -1,6 +1,6 @@
 #!/usr/bin/bash
 
-set -eoux pipefail
+set -euo pipefail
 
 ###############################################################################
 # Example: Swap GNOME Desktop with COSMIC Desktop
@@ -13,7 +13,8 @@ set -eoux pipefail
 #
 # To use this script:
 # 1. Rename to remove .example extension: mv 30-cosmic-desktop.sh.example 30-cosmic-desktop.sh
-# 2. Build - scripts run in numerical order automatically
+# 2. Add an explicit RUN block for /ctx/build/30-cosmic-desktop.sh after
+#    10-build.sh in Containerfile. See build/README.md for the standard block.
 #
 # WARNING: This removes GNOME and replaces it with COSMIC. Only use this if
 # you want COSMIC as your desktop environment instead of GNOME.
@@ -65,7 +66,7 @@ systemctl enable cosmic-greeter
 
 # Set COSMIC as default session
 mkdir -p /etc/X11/sessions
-cat > /etc/X11/sessions/cosmic.desktop << 'COSMICDESKTOP'
+cat >/etc/X11/sessions/cosmic.desktop <<'COSMICDESKTOP'
 [Desktop Entry]
 Name=COSMIC
 Comment=COSMIC Desktop Environment

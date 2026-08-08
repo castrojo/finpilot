@@ -15,6 +15,7 @@ This directory contains example rclone configuration files for uploading ISO ima
 ### 1. Choose Your Storage Provider
 
 Select the configuration file that matches your preferred storage provider. Each file contains:
+
 - Setup instructions
 - Required GitHub secrets
 - Provider-specific configuration options
@@ -85,28 +86,31 @@ You can modify these configuration files to suit your needs:
 
 ## Provider Comparison
 
-| Provider | Setup Complexity | Cost | Egress Fees | Notes |
-|----------|------------------|------|-------------|-------|
-| Cloudflare R2 | Medium | $ | Free | Best for frequent downloads |
-| AWS S3 | Medium | $$ | $$ | Most reliable, global reach |
-| Backblaze B2 | Easy | $ | $ | Good balance of price/features |
-| SFTP/SCP | Medium | Free* | Free | Requires your own server |
+| Provider      | Setup Complexity | Cost   | Egress Fees | Notes                          |
+| ------------- | ---------------- | ------ | ----------- | ------------------------------ |
+| Cloudflare R2 | Medium           | $      | Free        | Best for frequent downloads    |
+| AWS S3        | Medium           | $$     | $$          | Most reliable, global reach    |
+| Backblaze B2  | Easy             | $      | $           | Good balance of price/features |
+| SFTP/SCP      | Medium           | Free\* | Free        | Requires your own server       |
 
-*Requires existing server infrastructure
+\*Requires existing server infrastructure
 
 ## Troubleshooting
 
 ### "Permission denied" errors
+
 - Check that your access keys are correct
 - Verify IAM permissions (for AWS)
 - Ensure the bucket exists and is accessible
 
 ### "Endpoint not found" errors
+
 - Verify the endpoint URL is correct
 - Check region settings
 - For Cloudflare R2, ensure you're using the correct Account ID
 
 ### Upload fails silently
+
 - Enable workflow debug logging in GitHub Actions
 - Check that secrets are properly set
 - Verify the rclone config syntax
@@ -122,6 +126,7 @@ You can modify these configuration files to suit your needs:
 ## Need Help?
 
 If you encounter issues:
+
 1. Check the workflow logs in the Actions tab
 2. Review the rclone documentation for your provider
 3. Ask in the [Universal Blue Discord](https://discord.gg/WEu6BdFEtp)

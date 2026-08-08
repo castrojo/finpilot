@@ -11,10 +11,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v5
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
       - name: Set up Homebrew
-        uses: Homebrew/actions/setup-homebrew@1ccc07ccd54b6048295516a3eb89b192c35057dc # master
+        uses: Homebrew/actions/setup-homebrew@c8707045ccae42888fe98e86f2ee8938bc7cc193 # master
 
       - name: Validate Brewfiles
         shell: bash
@@ -22,17 +22,13 @@ jobs:
           echo "Validating Brewfiles in custom/brew/ directory..."
 
           find "custom/brew" -iname '*\.Brewfile*' -print0 | \
-            while IFS= read -r -d '' brewfile ; do \
-              echo "::group:: ===$(basename $brewfile)==="
-              grep -E -e "^tap" $brewfile > taps.Brewfile || echo "# No taps" > taps.Brewfile
-              set -xeuo pipefail
-              brew bundle --file=./taps.Brewfile
-              if brew bundle exec whoami --file="$brewfile" | grep -F -e "${USER}" ; then
+            while IFS= read -r -d '' brewfile ; do
+              echo "::group:: ===$(basename "$brewfile")==="
+              if brew bundle check --file="$brewfile" 2>&1; then
                 echo "✓ $brewfile is valid"
               else
                 echo "✗ $brewfile validation failed"
                 exit 1
               fi
-              set +xeuo pipefail
               echo "::endgroup::"
             done

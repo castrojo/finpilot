@@ -1,0 +1,1 @@
+../../.agents/skills/finpilot-onboarding/SKILL.md
